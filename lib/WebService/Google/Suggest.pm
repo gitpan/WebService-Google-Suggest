@@ -1,15 +1,26 @@
+#
+# This file is part of WebService-Google-Suggest
+#
+# This software is copyright (c) 2011 by Tasuhiko Miyagawa.
+#
+# This is free software; you can redistribute it and/or modify it under
+# the same terms as the Perl 5 programming language system itself.
+#
 package WebService::Google::Suggest;
+BEGIN {
+  $WebService::Google::Suggest::VERSION = '0.05';
+}
+
+# ABSTRACT: Google Suggest as an API
 
 use strict;
-use vars qw($VERSION);
-$VERSION = '0.04';
+use warnings;
 
 use Carp;
 use LWP::UserAgent;
 use URI::Escape;
 
-use vars qw($CompleteURL);
-$CompleteURL = "http://www.google.com/complete/search?hl=en&js=true&qu=";
+our $CompleteURL = "http://www.google.com/complete/search?hl=en&js=true&qu=";
 
 sub new {
     my $class = shift;
@@ -34,32 +45,40 @@ sub complete {
 
     my ( $user_query, $array ) = ( $1, $2 );
     my @results;
-    while ( $array =~ /\[([^\]]+)\]/g ) {
+    while ( $array =~ /\[([^\]]+)\]/g ) {        
         my $row = $1;
-        my ( $query, $count ) = $row =~ /\"([^"]+)\",\"([\d,]+) results?/;
-        $count =~ tr/,//d;
+        my ( $query, $count, $rank ) = $row =~ /\"([^"]+)\",\"([\d]+)?\",\"([\d]+)?\"/;
         $count += 0; # numify
-        push @results, { query => $query, results => $count };
+        $rank  += 0;
+        push @results, { query => $query, results => $count, rank => $rank };
     }
 
     return @results;
 }
 
 1;
-__END__
+
+
+=pod
 
 =head1 NAME
 
 WebService::Google::Suggest - Google Suggest as an API
 
+=head1 VERSION
+
+version 0.05
+
 =head1 SYNOPSIS
 
   use WebService::Google::Suggest;
 
-  my $suggest = WebService::Google::Suggest->new();
+  my $suggest     = WebService::Google::Suggest->new();
   my @suggestions = $suggest->complete("goog");
   for my $suggestion (@suggestions) {
-      print "$suggestion->{query}: $suggestion->{results} results\n";
+    print "[" . $suggestion->{rank} . "] "
+      . $suggestion->{query} . ":"
+      . $suggestion->{results} results . "\n";
   }
 
 =head1 DESCRIPTION
@@ -85,8 +104,8 @@ the query. Suggestions are in a list of hashrefs, for example with
 query "Google":
 
   @suggestions = (
-    { query => "google", results => 122000000 },
-    { query => "google toolbar", results => 2620000 },
+    { query => "google",         results => 0, rank => 0 },
+    { query => "google toolbar", results => 0, rank => 1 },
     ...
   );
 
@@ -102,18 +121,6 @@ properties.
 
 =back
 
-=head1 AUTHOR
-
-Tatsuhiko Miyagawa E<lt>miyagawa@bulknews.netE<gt>
-Franck Cuny E<lt>franck@lumberjaph.netE<gt>
-
-=head1 LICENSE
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
-This module gives you B<NO WARRANTY>.
-
 =head1 SEE ALSO
 
 http://www.adamstiles.com/adam/2004/12/hacking_google_.html
@@ -122,4 +129,19 @@ http://www.google.com/webhp?complete=1&hl=en
 
 http://labs.google.com/suggest/faq.html
 
+=head1 AUTHOR
+
+Tatsuhiko Miyagawa <miyagawa@bulknews.net>, franck cuny <franck@lumberjaph.net>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011 by Tasuhiko Miyagawa.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+
